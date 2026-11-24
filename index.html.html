@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petualangan Rasio Waktu - Matematika Kelas 6 SD</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka & Nunito untuk kesan ramah anak -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Tone.js untuk efek suara sintetis tanpa URL eksternal -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Canvas Confetti untuk efek perayaan kemenangan -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #E0F2FE 0%, #FEF3C7 50%, #FCE7F3 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        h1, h2, h3, .font-fredoka {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        /* Animasi mengambang untuk ikon jam */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(3deg); }
+        }
+        .animate-float {
+            animation: float 3.5s ease-in-out infinite;
+        }
+
+        /* Animasi berdenyut lembut */
+        @keyframes pulse-soft {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+        }
+        .animate-pulse-soft {
+            animation: pulse-soft 2.5s infinite;
+        }
+
+        /* Gaya tombol 3D ceria */
+        .btn-3d {
+            transition: all 0.15s ease;
+            border-bottom-width: 5px;
+        }
+        .btn-3d:active:not(:disabled) {
+            transform: translateY(3px);
+            border-bottom-width: 2px;
+        }
+        .btn-3d:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Animasi muncul untuk kartu soal */
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.92) translateY(15px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .pop-in {
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Animasi getar saat salah */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* Pola latar belakang titik-titik */
+        .bg-dots {
+            background-image: radial-gradient(#93C5FD 2px, transparent 2px);
+            background-size: 28px 28px;
+        }
+
+        /* Animasi detak jantung / panik saat waktu kritis */
+        @keyframes pulse-urgent {
+            0%, 100% { transform: scale(1); background-color: #FEE2E2; border-color: #EF4444; }
+            50% { transform: scale(1.06); background-color: #FECACA; border-color: #DC2626; }
+        }
+        .timer-urgent {
+            animation: pulse-urgent 0.5s infinite;
+            color: #B91C1C !important;
+        }
+    </style>
+</head>
+<body class="bg-dots flex flex-col items-center justify-center p-3 sm:p-6 text-slate-800">
+
+    <!-- Kontainer Utama Game -->
+    <div id="app" class="w-full max-w-3xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border-4 border-sky-300 overflow-hidden transition-all duration-300">
+        
+        <!-- Header Bar -->
+        <header class="bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 p-4 text-white flex items-center justify-between shadow-md">
+            <div class="flex items-center gap-2.5">
+                <div class="bg-white p-2 rounded-2xl shadow-inner text-sky-600">
+                    <!-- Ikon SVG Jam -->
+                    <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold tracking-wide leading-tight">Petualangan Rasio Waktu</h1>
+                    <p class="text-xs text-sky-100 font-semibold">Matematika Kelas 6 SD</p>
+                </div>
+            </div>
+
+            <!-- Tombol Suara & Bantuan Rumus -->
+            <div class="flex items-center gap-2">
+                <button id="btn-cheat-sheet" onclick="toggleCheatSheet()" title="Catatan Konversi Waktu" class="bg-amber-400 hover:bg-amber-300 text-amber-950 font-bold text-xs sm:text-sm px-3 py-2 rounded-xl shadow btn-3d border-amber-600 flex items-center gap-1">
+                    <span>📖</span> <span class="hidden sm:inline">Catatan Waktu</span>
+                </button>
+                <button id="btn-sound" onclick="toggleSound()" title="Suara Efek" class="bg-white/20 hover:bg-white/30 text-white p-2 rounded-xl transition">
+                    <span id="sound-icon" class="text-lg">🔊</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Modal Catatan Konversi Waktu (Bisa dibuka kapan saja) -->
+        <div id="cheat-sheet-modal" class="hidden bg-amber-50 border-b-4 border-amber-300 p-4 text-sm transition-all">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="font-fredoka font-bold text-amber-800 text-base flex items-center gap-1.5">
+                    <span>💡</span> Ingat Tangga & Satuan Waktu!
+                </h3>
+                <button onclick="toggleCheatSheet()" class="text-amber-800 hover:text-red-600 font-bold px-2 py-0.5 rounded-lg bg-amber-200/60">Tutup ✖</button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-amber-950 font-semibold">
+                <div class="bg-white p-2.5 rounded-xl border border-amber-200 shadow-sm text-center">
+                    <span class="text-sky-600 font-extrabold">1 Jam</span> = <span class="text-emerald-600 font-extrabold">60 Menit</span>
+                </div>
+                <div class="bg-white p-2.5 rounded-xl border border-amber-200 shadow-sm text-center">
+                    <span class="text-sky-600 font-extrabold">1 Menit</span> = <span class="text-emerald-600 font-extrabold">60 Detik</span>
+                </div>
+                <div class="bg-white p-2.5 rounded-xl border border-amber-200 shadow-sm text-center">
+                    <span class="text-sky-600 font-extrabold">1 Hari</span> = <span class="text-emerald-600 font-extrabold">24 Jam</span>
+                </div>
+            </div>
+            <p class="mt-2 text-xs text-amber-800 bg-amber-100/80 p-2 rounded-lg">
+                <strong>Tips Rasio:</strong> Pastikan kedua satuan waktu <strong>sudah sama</strong> (misalnya sama-sama menit), lalu bagi kedua angka dengan FPB-nya hingga paling sederhana!
+            </p>
+        </div>
+
+        <!-- ==================== LAYAR 1: MENU UTAMA ==================== -->
+        <main id="screen-menu" class="p-6 sm:p-8 text-center pop-in">
+            <!-- Ilustrasi SVG Karakter Jam Ceria -->
+            <div class="flex justify-center mb-4">
+                <div class="relative animate-float">
+                    <svg class="w-28 h-28 sm:w-32 sm:h-32 drop-shadow-lg" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Lonceng Jam -->
+                        <path d="M22 28C16 22 24 12 34 18L22 28Z" fill="#F59E0B" stroke="#B45309" stroke-width="3"/>
+                        <path d="M98 28C104 22 96 12 86 18L98 28Z" fill="#F59E0B" stroke="#B45309" stroke-width="3"/>
+                        <!-- Kaki Jam -->
+                        <path d="M35 102L28 112" stroke="#B45309" stroke-width="5" stroke-linecap="round"/>
+                        <path d="M85 102L92 112" stroke="#B45309" stroke-width="5" stroke-linecap="round"/>
+                        <!-- Badan Jam -->
+                        <circle cx="60" cy="62" r="44" fill="#38BDF8" stroke="#0284C7" stroke-width="4"/>
+                        <circle cx="60" cy="62" r="35" fill="#FFFFFF"/>
+                        <!-- Angka/Garis Jam -->
+                        <line x1="60" y1="32" x2="60" y2="37" stroke="#94A3B8" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="60" y1="87" x2="60" y2="92" stroke="#94A3B8" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="30" y1="62" x2="35" y2="62" stroke="#94A3B8" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="85" y1="62" x2="90" y2="62" stroke="#94A3B8" stroke-width="3" stroke-linecap="round"/>
+                        <!-- Mata & Senyum -->
+                        <circle cx="49" cy="55" r="3.5" fill="#1E293B"/>
+                        <circle cx="71" cy="55" r="3.5" fill="#1E293B"/>
+                        <path d="M51 69C54 74 66 74 69 69" stroke="#F43F5E" stroke-width="3.5" stroke-linecap="round"/>
+                        <!-- Jarum Jam -->
+                        <line x1="60" y1="62" x2="60" y2="41" stroke="#F59E0B" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="60" y1="62" x2="76" y2="62" stroke="#EF4444" stroke-width="3.5" stroke-linecap="round"/>
+                        <circle cx="60" cy="62" r="4" fill="#1E293B"/>
+                    </svg>
+                </div>
+            </div>
+
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">Ayo Belajar Rasio Durasi Waktu!</h2>
+            <p class="text-slate-600 text-sm sm:text-base max-w-xl mx-auto mb-6 leading-relaxed">
+                Bandingkan lama waktu belajar, bermain, dan berolahraga! Samakan satuannya, sederhanakan perbandingannya, dan kumpulkan semua bintang!
+            </p>
+
+            <!-- Pilihan Tingkat Kesulitan -->
+            <div class="mb-4 text-left max-w-xl mx-auto">
+                <p class="text-center font-bold text-slate-700 mb-3 text-sm uppercase tracking-wider">Pilih Tingkat Tantangan:</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    
+                    <!-- Level Mudah -->
+                    <button onclick="startGame('mudah')" class="group bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-400 rounded-2xl p-4 text-center transition btn-3d border-b-emerald-600 flex flex-col items-center">
+                        <span class="text-3xl mb-1 group-hover:scale-110 transition">🌱</span>
+                        <span class="font-fredoka font-bold text-lg text-emerald-800">Mudah</span>
+                        <span class="text-xs text-emerald-700 mt-1">Satuan waktu sama (menit : menit)</span>
+                        <span class="mt-3 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full">Mulai</span>
+                    </button>
+
+                    <!-- Level Sedang -->
+                    <button onclick="startGame('sedang')" class="group bg-amber-50 hover:bg-amber-100 border-2 border-amber-400 rounded-2xl p-4 text-center transition btn-3d border-b-amber-600 flex flex-col items-center">
+                        <span class="text-3xl mb-1 group-hover:scale-110 transition">🚀</span>
+                        <span class="font-fredoka font-bold text-lg text-amber-800">Sedang</span>
+                        <span class="text-xs text-amber-700 mt-1">Satuan berbeda (jam & menit)</span>
+                        <span class="mt-3 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">Mulai</span>
+                    </button>
+
+                    <!-- Level Tantangan HOTS -->
+                    <button onclick="startGame('hots')" class="group bg-rose-50 hover:bg-rose-100 border-2 border-rose-400 rounded-2xl p-4 text-center transition btn-3d border-b-rose-600 flex flex-col items-center">
+                        <span class="text-3xl mb-1 group-hover:scale-110 transition">🏆</span>
+                        <span class="font-fredoka font-bold text-lg text-rose-800">Tantangan HOTS</span>
+                        <span class="text-xs text-rose-700 mt-1">Soal cerita & mencari durasi</span>
+                        <span class="mt-3 bg-rose-500 text-white text-xs font-bold px-3 py-1 rounded-full">Mulai</span>
+                    </button>
+
+                </div>
+            </div>
+        </main>
+
+        <!-- ==================== LAYAR 2: AREA PERMAINAN ==================== -->
+        <section id="screen-game" class="hidden p-4 sm:p-7">
+            
+            <!-- Status Bar: Nyawa, Timer Tegang, Progress Soal, dan Skor -->
+            <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-100 p-3 rounded-2xl border-2 border-slate-200 mb-5">
+                <!-- Nyawa / Kesempatan -->
+                <div class="flex items-center gap-1.5" title="Kesempatan Nyawa">
+                    <span class="text-xs font-bold text-slate-500 uppercase mr-1 hidden sm:inline">Nyawa:</span>
+                    <div id="lives-container" class="flex gap-1 text-lg sm:text-xl">
+                        <!-- Diisi via JS -->
+                    </div>
+                </div>
+
+                <!-- Timer Hitung Mundur Menegangkan -->
+                <div id="timer-box" class="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border-2 border-sky-300 shadow-sm transition-colors">
+                    <span id="timer-icon" class="text-base sm:text-lg">⏳</span>
+                    <span class="font-fredoka font-bold text-slate-800 text-base sm:text-lg" id="timer-display">30s</span>
+                </div>
+
+                <!-- Nomor Soal & Badge Level -->
+                <div class="flex items-center gap-2">
+                    <span id="level-badge" class="px-2.5 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide bg-sky-100 text-sky-700 hidden md:inline-block">
+                        Mudah
+                    </span>
+                    <span class="font-fredoka font-bold text-slate-700 text-sm sm:text-base">
+                        Soal <span id="question-number" class="text-sky-600">1</span>/<span id="total-questions">7</span>
+                    </span>
+                </div>
+
+                <!-- Skor -->
+                <div class="flex items-center gap-1.5 bg-amber-100 px-3 py-1 rounded-xl border border-amber-300">
+                    <span class="text-base sm:text-lg">⭐</span>
+                    <span class="font-fredoka font-bold text-amber-800 text-sm sm:text-base" id="score-display">0</span>
+                </div>
+            </div>
+
+            <!-- Progress Bar Visual -->
+            <div class="w-full bg-slate-200 h-3 rounded-full overflow-hidden mb-5">
+                <div id="progress-bar" class="bg-gradient-to-r from-emerald-400 to-sky-500 h-full transition-all duration-500 rounded-full" style="width: 14%;"></div>
+            </div>
+
+            <!-- Kartu Soal -->
+            <div id="question-card" class="bg-gradient-to-b from-sky-50 to-white border-2 border-sky-200 rounded-3xl p-5 sm:p-6 shadow-sm mb-5 pop-in">
+                
+                <!-- Visualisasi Aktivitas Siswa (2 Kartu Perbandingan) -->
+                <div id="visual-comparison" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+                    <!-- Aktivitas A -->
+                    <div class="bg-white border-2 border-indigo-200 rounded-2xl p-3.5 flex items-center gap-3 shadow-sm">
+                        <div id="act1-icon" class="text-4xl bg-indigo-50 w-14 h-14 rounded-2xl flex items-center justify-center shrink-0">
+                            📚
+                        </div>
+                        <div>
+                            <p id="act1-label" class="text-xs font-bold text-indigo-600 uppercase">Membaca Buku</p>
+                            <p id="act1-time" class="font-fredoka font-bold text-lg sm:text-xl text-slate-800">30 Menit</p>
+                        </div>
+                    </div>
+
+                    <!-- Aktivitas B -->
+                    <div class="bg-white border-2 border-pink-200 rounded-2xl p-3.5 flex items-center gap-3 shadow-sm">
+                        <div id="act2-icon" class="text-4xl bg-pink-50 w-14 h-14 rounded-2xl flex items-center justify-center shrink-0">
+                            ⚽
+                        </div>
+                        <div>
+                            <p id="act2-label" class="text-xs font-bold text-pink-600 uppercase">Bermain Bola</p>
+                            <p id="act2-time" class="font-fredoka font-bold text-lg sm:text-xl text-slate-800">45 Menit</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teks Pertanyaan -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-inner">
+                    <p id="question-text" class="text-base sm:text-lg font-bold text-slate-800 leading-relaxed">
+                        Memuat pertanyaan...
+                    </p>
+                </div>
+            </div>
+
+            <!-- Pilihan Jawaban (Grid 2x2) -->
+            <div id="options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-5">
+                <!-- Tombol opsi jawaban di-generate via JS -->
+            </div>
+
+            <!-- Panel Umpan Balik & Penjelasan Langkah demi Langkah -->
+            <div id="feedback-panel" class="hidden rounded-3xl p-5 border-2 transition-all pop-in">
+                <div class="flex items-start gap-3 mb-3">
+                    <div id="feedback-emoji" class="text-3xl sm:text-4xl">🎉</div>
+                    <div>
+                        <h3 id="feedback-title" class="font-fredoka font-bold text-lg sm:text-xl">Hebat! Jawabanmu Benar!</h3>
+                        <p id="feedback-subtitle" class="text-xs sm:text-sm font-semibold opacity-90">Kamu mendapatkan +100 poin!</p>
+                    </div>
+                </div>
+
+                <!-- Kotak Penjelasan Langkah demi Langkah -->
+                <div class="bg-white/90 rounded-2xl p-4 border border-slate-200 text-sm text-slate-700 space-y-1.5">
+                    <p class="font-bold text-slate-900 flex items-center gap-1.5">
+                        <span>📝</span> Langkah Penyelesaian:
+                    </p>
+                    <div id="explanation-steps" class="space-y-1 pl-1 leading-relaxed">
+                        <!-- Diisi via JS -->
+                    </div>
+                </div>
+
+                <!-- Tombol Lanjut -->
+                <div class="mt-4 flex justify-end">
+                    <button id="btn-next" onclick="nextQuestion()" class="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 text-white font-fredoka font-bold text-base sm:text-lg px-6 py-3 rounded-2xl shadow-lg btn-3d border-sky-700 flex items-center justify-center gap-2">
+                        <span>Soal Berikutnya</span> <span>➡️</span>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ==================== LAYAR 3: REKAP NILAI AKHIR ==================== -->
+        <section id="screen-result" class="hidden p-6 sm:p-8 text-center pop-in">
+            
+            <!-- Bintang Penghargaan -->
+            <div id="result-stars" class="flex justify-center gap-2 text-5xl sm:text-6xl mb-4 drop-shadow">
+                <span>⭐</span><span>⭐</span><span>⭐</span>
+            </div>
+
+            <h2 id="result-title" class="text-2xl sm:text-3xl font-fredoka font-bold text-slate-800 mb-2">
+                Luar Biasa!
+            </h2>
+            <p id="result-message" class="text-slate-600 text-sm sm:text-base max-w-md mx-auto mb-6">
+                Kamu sudah menguasai materi rasio terhadap durasi waktu dengan sangat baik!
+            </p>
+
+            <!-- Kartu Statistik Nilai -->
+            <div class="grid grid-cols-3 gap-3 max-w-lg mx-auto mb-7">
+                <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-3.5">
+                    <p class="text-xs font-bold text-amber-700 uppercase">Skor Akhir</p>
+                    <p id="final-score" class="font-fredoka font-bold text-2xl sm:text-3xl text-amber-600 mt-1">700</p>
+                </div>
+                <div class="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-3.5">
+                    <p class="text-xs font-bold text-emerald-700 uppercase">Benar</p>
+                    <p id="final-correct" class="font-fredoka font-bold text-2xl sm:text-3xl text-emerald-600 mt-1">7/7</p>
+                </div>
+                <div class="bg-sky-50 border-2 border-sky-300 rounded-2xl p-3.5">
+                    <p class="text-xs font-bold text-sky-700 uppercase">Akurasi</p>
+                    <p id="final-accuracy" class="font-fredoka font-bold text-2xl sm:text-3xl text-sky-600 mt-1">100%</p>
+                </div>
+            </div>
+
+            <!-- Tombol Aksi Akhir -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button onclick="restartSameLevel()" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-fredoka font-bold text-base sm:text-lg px-6 py-3.5 rounded-2xl shadow-lg btn-3d border-emerald-700 flex items-center justify-center gap-2">
+                    <span>🔄</span> <span>Main Lagi (Level Ini)</span>
+                </button>
+                <button onclick="backToMenu()" class="w-full sm:w-auto bg-sky-500 hover:bg-sky-600 text-white font-fredoka font-bold text-base sm:text-lg px-6 py-3.5 rounded-2xl shadow-lg btn-3d border-sky-700 flex items-center justify-center gap-2">
+                    <span>🏠</span> <span>Pilih Level Lain</span>
+                </button>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Footer Kecil -->
+    <footer class="mt-4 text-center text-xs text-slate-600 font-semibold">
+        Belajar Matematika Menyenangkan • Kelas 6 SD (Kurikulum Merdeka)
+    </footer>
+
+    <script>
+        // ==================== PENGATURAN EFEK SUARA & MUSIK TEGANG (TONE.JS) ====================
+        let soundEnabled = true;
+        let synth = null;
+        let tickSynth = null;
+        let bassSynth = null;
+        let tensionLoop = null;
+        let tensionStep = 0;
+
+        function initAudio() {
+            if (!synth && typeof Tone !== 'undefined') {
+                // Synth utama untuk melodi menang/kalah/klik
+                synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                synth.volume.value = -8;
+
+                // Synth perkusi pendek untuk detak jarum jam (tick-tock)
+                tickSynth = new Tone.MembraneSynth({
+                    pitchDecay: 0.01,
+                    octaves: 2,
+                    oscillator: { type: "sine" },
+                    envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.05 }
+                }).toDestination();
+                tickSynth.volume.value = -10;
+
+                // Synth bass rendah untuk atmosfer menegangkan
+                bassSynth = new Tone.MonoSynth({
+                    oscillator: { type: "triangle" },
+                    envelope: { attack: 0.05, decay: 0.3, sustain: 0.4, release: 0.4 },
+                    filterEnvelope: { attack: 0.05, decay: 0.2, sustain: 0.2, release: 0.5, baseFrequency: 120, octaves: 2 }
+                }).toDestination();
+                bassSynth.volume.value = -16;
+            }
+        }
+
+        // Memulai musik latar menegangkan & detak waktu
+        function startTensionAudio() {
+            stopTensionAudio();
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+
+                // Pola nada bass minor yang menegangkan (seperti kuis Who Wants to Be a Millionaire)
+                const tensionNotes = ["D2", "D2", "F2", "E2", "D2", "D2", "G2", "F2"];
+                tensionStep = 0;
+
+                tensionLoop = setInterval(() => {
+                    if (!soundEnabled || answered) return;
+                    const now = Tone.now();
+                    const note = tensionNotes[tensionStep % tensionNotes.length];
+                    
+                    // Mainkan denyut bass rendah
+                    bassSynth.triggerAttackRelease(note, "8n", now);
+
+                    // Jika waktu tersisa <= 10 detik, tambahkan detak alarm cepat yang memacu adrenalin
+                    if (timeLeft <= 10 && timeLeft > 0) {
+                        tickSynth.triggerAttackRelease("G5", "32n", now);
+                        setTimeout(() => {
+                            if (soundEnabled && !answered) {
+                                tickSynth.triggerAttackRelease("C6", "32n", Tone.now());
+                            }
+                        }, 250);
+                    } else {
+                        // Detak jam normal (tick - tock)
+                        const tickPitch = tensionStep % 2 === 0 ? "C4" : "G3";
+                        tickSynth.triggerAttackRelease(tickPitch, "32n", now);
+                    }
+
+                    tensionStep++;
+                }, 500); // Berdenyut setiap 0.5 detik
+            } catch (e) {
+                console.warn("Gagal memulai audio tegang:", e);
+            }
+        }
+
+        function stopTensionAudio() {
+            if (tensionLoop) {
+                clearInterval(tensionLoop);
+                tensionLoop = null;
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                const now = Tone.now();
+                if (type === 'click') {
+                    synth.triggerAttackRelease("C5", "32n", now);
+                } else if (type === 'correct') {
+                    synth.triggerAttackRelease(["C5", "E5", "G5"], "16n", now);
+                    synth.triggerAttackRelease(["C6"], "8n", now + 0.12);
+                } else if (type === 'wrong') {
+                    // Efek suara dramatis saat salah / waktu habis
+                    bassSynth.triggerAttackRelease("A1", "2n", now);
+                    synth.triggerAttackRelease(["E4", "Eb4"], "8n", now);
+                    synth.triggerAttackRelease(["D4", "Db4"], "4n", now + 0.15);
+                } else if (type === 'win') {
+                    synth.triggerAttackRelease("C5", "16n", now);
+                    synth.triggerAttackRelease("E5", "16n", now + 0.1);
+                    synth.triggerAttackRelease("G5", "16n", now + 0.2);
+                    synth.triggerAttackRelease("C6", "4n", now + 0.3);
+                }
+            } catch (e) {
+                console.warn("Audio tidak dapat diputar:", e);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('sound-icon').textContent = soundEnabled ? '🔊' : '🔇';
+            if (!soundEnabled) {
+                stopTensionAudio();
+            } else if (!answered && !document.getElementById('screen-game').classList.contains('hidden')) {
+                startTensionAudio();
+            }
+        }
+
+        function toggleCheatSheet() {
+            playSound('click');
+            const modal = document.getElementById('cheat-sheet-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        // ==================== BANK SOAL PER LEVEL ====================
+        const questionBank = {
+            // LEVEL 1: MUDAH (Satuan waktu sama, menyederhanakan rasio sederhana)
+            mudah: [
+                {
+                    act1: { icon: "📖", label: "Membaca Buku", time: "20 Menit" },
+                    act2: { icon: "📺", label: "Menonton TV", time: "40 Menit" },
+                    question: "Budi membaca buku selama 20 menit dan menonton TV selama 40 menit. Berapakah rasio paling sederhana dari lama Budi membaca buku terhadap menonton TV?",
+                    options: ["1 : 2", "2 : 1", "1 : 4", "2 : 3"],
+                    answer: "1 : 2",
+                    steps: [
+                        "Tuliskan perbandingan awal: <strong>20 menit : 40 menit</strong>.",
+                        "Karena satuannya sudah sama (menit), kita langsung bagi kedua angka dengan FPB dari 20 dan 40, yaitu <strong>20</strong>.",
+                        "20 ÷ 20 = <strong>1</strong> dan 40 ÷ 20 = <strong>2</strong>.",
+                        "Jadi, rasio paling sederhananya adalah <strong>1 : 2</strong>."
+                    ]
+                },
+                {
+                    act1: { icon: "🚴", label: "Bersepeda", time: "15 Menit" },
+                    act2: { icon: "🏃", label: "Berlari Pagi", time: "45 Menit" },
+                    question: "Siti bersepeda selama 15 menit, sedangkan adiknya berlari pagi selama 45 menit. Berapakah rasio durasi bersepeda Siti terhadap berlari pagi adiknya?",
+                    options: ["1 : 3", "3 : 1", "1 : 5", "2 : 3"],
+                    answer: "1 : 3",
+                    steps: [
+                        "Perbandingan durasi: <strong>15 menit : 45 menit</strong>.",
+                        "Cari FPB dari 15 dan 45, yaitu <strong>15</strong>.",
+                        "15 ÷ 15 = <strong>1</strong> dan 45 ÷ 15 = <strong>3</strong>.",
+                        "Jadi, rasionya adalah <strong>1 : 3</strong>."
+                    ]
+                },
+                {
+                    act1: { icon: "🎨", label: "Melukis", time: "30 Menit" },
+                    act2: { icon: "🎹", label: "Latihan Piano", time: "50 Menit" },
+                    question: "Rina melukis selama 30 menit dan berlatih piano selama 50 menit. Bentuk paling sederhana dari rasio lama Rina melukis terhadap latihan piano adalah...",
+                    options: ["3 : 5", "5 : 3", "3 : 8", "1 : 2"],
+                    answer: "3 : 5",
+                    steps: [
+                        "Perbandingan waktu: <strong>30 menit : 50 menit</strong>.",
+                        "Sederhanakan dengan membagi kedua bilangan dengan FPB-nya yaitu <strong>10</strong>.",
+                        "30 ÷ 10 = <strong>3</strong> dan 50 ÷ 10 = <strong>5</strong>.",
+                        "Jadi, rasio sederhananya adalah <strong>3 : 5</strong>."
+                    ]
+                },
+                {
+                    act1: { icon: "🧮", label: "Belajar Matematika", time: "40 Menit" },
+                    act2: { icon: "⚽", label: "Bermain Bola", time: "24 Menit" },
+                    question: "Edo belajar Matematika selama 40 menit, lalu bermain sepak bola selama 24 menit. Berapa rasio waktu belajar Matematika terhadap waktu bermain bola?",
+                    options: ["5 : 3", "3 : 5", "10 : 6", "4 : 2"],
+                    answer: "5 : 3",
+                    steps: [
+                        "Perhatikan urutan yang ditanya: <strong>Belajar Matematika : Bermain Bola</strong> = <strong>40 : 24</strong>.",
+                        "FPB dari 40 dan 24 adalah <strong>8</strong>.",
+                        "40 ÷ 8 = <strong>5</strong> dan 24 ÷ 8 = <strong>3</strong>.",
+                        "Jadi, rasionya adalah <strong>5 : 3</strong> (jangan terbalik menjadi 3 : 5 ya!)."
+                    ]
+                },
+                {
+                    act1: { icon: "🧹", label: "Menyapu Halaman", time: "12 Menit" },
+                    act2: { icon: "🌱", label: "Menyiram Tanaman", time: "18 Menit" },
+                    question: "Dayu membantu ibu menyapu halaman selama 12 menit dan menyiram tanaman selama 18 menit. Berapakah rasio durasi menyapu terhadap menyiram tanaman?",
+                    options: ["2 : 3", "3 : 2", "1 : 2", "4 : 6"],
+                    answer: "2 : 3",
+                    steps: [
+                        "Tuliskan rasio: <strong>12 menit : 18 menit</strong>.",
+                        "Bagi kedua angka dengan FPB dari 12 dan 18, yaitu <strong>6</strong>.",
+                        "12 ÷ 6 = <strong>2</strong> dan 18 ÷ 6 = <strong>3</strong>.",
+                        "Jadi, rasio paling sederhananya adalah <strong>2 : 3</strong>."
+                    ]
+                },
+                {
+                    act1: { icon: "🏊", label: "Berenang", time: "35 Menit" },
+                    act2: { icon: "🚿", label: "Mandi & Bilas", time: "14 Menit" },
+                    question: "Andi berenang selama 35 menit, kemudian mandi dan bilas selama 14 menit. Berapa rasio waktu berenang terhadap waktu mandi Andi?",
+                    options: ["5 : 2", "2 : 5", "7 : 2", "5 : 3"],
+                    answer: "5 : 2",
+                    steps: [
+                        "Perbandingan waktu: <strong>35 menit : 14 menit</strong>.",
+                        "FPB dari 35 dan 14 adalah <strong>7</strong>.",
+                        "35 ÷ 7 = <strong>5</strong> dan 14 ÷ 7 = <strong>2</strong>.",
+                        "Jadi, rasionya adalah <strong>5 : 2</strong>."
+                    ]
+                },
+                {
+                    act1: { icon: "⏱️", label: "Lari Sprint", time: "45 Detik" },
+                    act2: { icon: "🤸", label: "Pemanasan", time: "90 Detik" },
+                    question: "Dalam pelajaran PJOK, Lani melakukan pemanasan selama 90 detik dan lari sprint selama 45 detik. Berapa rasio waktu pemanasan terhadap lari sprint?",
+                    options: ["2 : 1", "1 : 2", "3 : 1", "1 : 3"],
+                    answer: "2 : 1",
+                    steps: [
+                        "Perhatikan urutan yang ditanya: <strong>Pemanasan : Lari Sprint</strong> = <strong>90 detik : 45 detik</strong>.",
+                        "Bagi kedua angka dengan <strong>45</strong>.",
+                        "90 ÷ 45 = <strong>2</strong> dan 45 ÷ 45 = <strong>1</strong>.",
+                        "Jadi, rasionya adalah <strong>2 : 1</strong>."
+                    ]
+                }
+            ],
+
+            // LEVEL 2: SEDANG (Satuan berbeda: Jam & Menit, Menit & Detik, Hari & Jam)
+            sedang: [
+                {
+                    act1: { icon: "💻", label: "Belajar Daring", time: "1 Jam" },
+                    act2: { icon: "🎮", label: "Bermain Gim", time: "30 Menit" },
+                    question: "Raka belajar daring selama 1 jam, lalu beristirahat bermain gim selama 30 menit. Berapakah rasio lama belajar daring terhadap bermain gim?",
+                    options: ["2 : 1", "1 : 30", "1 : 2", "3 : 1"],
+                    answer: "2 : 1",
+                    steps: [
+                        "Samakan satuannya ke menit! Ingat: <strong>1 jam = 60 menit</strong>.",
+                        "Maka perbandingannya menjadi: <strong>60 menit : 30 menit</strong>.",
+                        "Bagi kedua bilangan dengan <strong>30</strong> (60 ÷ 30 = 2 dan 30 ÷ 30 = 1).",
+                        "Jadi, rasio paling sederhananya adalah <strong>2 : 1</strong>."
+                    ]
+                },
+                {
+                    act1: { icon: "🚶", label: "Jalan Kaki", time: "25 Menit" },
+                    act2: { icon: "🚌", label: "Naik Bus Sekolah", time: "1 Jam" },
+                    question: "Untuk pergi ke sekolah, Dina berjalan kaki selama 25 menit dan naik bus selama 1 jam. Berapa rasio waktu jalan kaki terhadap waktu naik bus?",
+                    options: ["5 : 12", "25 : 1", "1 : 4", "5 : 6"],
+                    answer: "5 : 12",
+                    steps: [
+                        "Ubah satuan jam menjadi menit: <strong>1 jam = 60 menit</strong>.",
+                        "Tuliskan perbandingan: <strong>25 menit : 60 menit</strong>.",
+                        "Bagi kedua bilangan dengan FPB dari 25 dan 60, yaitu <strong>5</strong>.",
+                        "25 ÷ 5 = <strong>5</strong> dan 60 ÷ 5 = <strong>12</strong>. Jadi rasionya <strong>5 : 12</strong>."
+                    ]
+                },
+                {
+                    act1: { icon: "📝", label: "Mengerjakan PR", time: "1,5 Jam" },
+                    act2: { icon: "🍽️", label: "Makan Malam", time: "30 Menit" },
+                    question: "Toni mengerjakan PR selama 1,5 jam dan makan malam bersama keluarga selama 30 menit. Rasio waktu mengerjakan PR terhadap makan malam adalah...",
+                    options: ["3 : 1", "1 : 3", "15 : 30", "5 : 1"],
+                    answer: "3 : 1",
+                    steps: [
+                        "Ubah 1,5 jam ke menit: <strong>1,5 × 60 menit = 90 menit</strong>.",
+                        "Perbandingannya menjadi: <strong>90 menit : 30 menit</strong>.",
+                        "Bagi kedua bilangan dengan <strong>30</strong> (90 ÷ 30 = 3 dan 30 ÷ 30 = 1).",
+                        "Jadi, rasionya adalah <strong>3 : 1</strong>."
+                    ]
+                },
+                {
+                    act1: { icon: "🎤", label: "Menyanyi Lagu", time: "3 Menit" },
+                    act2: { icon: "👏", label: "Tepuk Tangan", time: "45 Detik" },
+                    question: "Lani menyanyikan sebuah lagu selama 3 menit, lalu penonton bertepuk tangan selama 45 detik. Berapa rasio durasi menyanyi terhadap tepuk tangan?",
+                    options: ["4 : 1", "1 : 15", "3 : 45", "1 : 4"],
+                    answer: "4 : 1",
+                    steps: [
+                        "Samakan satuan menjadi detik! Ingat: <strong>1 menit = 60 detik</strong>.",
+                        "3 menit = 3 × 60 = <strong>180 detik</strong>.",
+                        "Perbandingan: <strong>180 detik : 45 detik</strong>. Bagi keduanya dengan <strong>45</strong>.",
+                        "180 ÷ 45 = <strong>4</strong> dan 45 ÷ 45 = <strong>1</strong>. Jadi rasionya <strong>4 : 1</strong>."
+                    ]
+                },
+                {
+                    act1: { icon: "😴", label: "Tidur Siang", time: "45 Menit" },
+                    act2: { icon: "📚", label: "Les Bahasa Inggris", time: "2 Jam" },
+                    question: "Sari tidur siang selama 45 menit, kemudian mengikuti les Bahasa Inggris selama 2 jam. Rasio waktu tidur siang terhadap waktu les adalah...",
+                    options: ["3 : 8", "8 : 3", "45 : 2", "1 : 3"],
+                    answer: "3 : 8",
+                    steps: [
+                        "Ubah 2 jam menjadi menit: <strong>2 × 60 menit = 120 menit</strong>.",
+                        "Perbandingan menjadi: <strong>45 menit : 120 menit</strong>.",
+                        "FPB dari 45 dan 120 adalah <strong>15</strong>.",
+                        "45 ÷ 15 = <strong>3</strong> dan 120 ÷ 15 = <strong>8</strong>. Jadi rasionya <strong>3 : 8</strong>."
+                    ]
+                },
+                {
+                    act1: { icon: "🏕️", label: "Kemah Pramuka", time: "2 Hari" },
+                    act2: { icon: "🔥", label: "Api Unggun", time: "6 Jam" },
+                    question: "Kegiatan kemah Pramuka berlangsung selama 2 hari, sedangkan acara api unggun berlangsung selama 6 jam. Berapa rasio durasi api unggun terhadap seluruh kegiatan kemah?",
+                    options: ["1 : 8", "8 : 1", "3 : 1", "1 : 3"],
+                    answer: "1 : 8",
+                    steps: [
+                        "Perhatikan urutan yang ditanya: <strong>Api Unggun : Kemah</strong>.",
+                        "Ubah 2 hari ke jam (1 hari = 24 jam): <strong>2 × 24 = 48 jam</strong>.",
+                        "Perbandingan: <strong>6 jam : 48 jam</strong>. Bagi keduanya dengan <strong>6</strong>.",
+                        "6 ÷ 6 = <strong>1</strong> dan 48 ÷ 6 = <strong>8</strong>. Jadi rasionya <strong>1 : 8</strong>."
+                    ]
+                },
+                {
+                    act1: { icon: "🍳", label: "Memasak Sarapan", time: "36 Menit" },
+                    act2: { icon: "🧁", label: "Memanggang Kue", time: "1 Jam 12 Menit" },
+                    question: "Ibu memasak sarapan selama 36 menit dan memanggang kue selama 1 jam 12 menit. Rasio waktu memasak sarapan terhadap memanggang kue adalah...",
+                    options: ["1 : 2", "2 : 1", "3 : 4", "1 : 3"],
+                    answer: "1 : 2",
+                    steps: [
+                        "Ubah 1 jam 12 menit ke menit: <strong>60 menit + 12 menit = 72 menit</strong>.",
+                        "Perbandingan: <strong>36 menit : 72 menit</strong>.",
+                        "Bagi kedua angka dengan <strong>36</strong> (36 ÷ 36 = 1 dan 72 ÷ 36 = 2).",
+                        "Jadi, rasio paling sederhananya adalah <strong>1 : 2</strong>."
+                    ]
+                }
+            ],
+
+            // LEVEL 3: TANTANGAN HOTS (Soal cerita terapan, mencari durasi dari rasio, dan perbandingan total waktu)
+            hots: [
+                {
+                    act1: { icon: "📖", label: "Belajar IPA", time: "Rasio 3" },
+                    act2: { icon: "🧮", label: "Belajar Matematika", time: "Rasio 4" },
+                    question: "Rasio waktu Fajar belajar IPA terhadap Matematika adalah 3 : 4. Jika Fajar belajar IPA selama 45 menit, berapa jam lama Fajar belajar Matematika?",
+                    options: ["1 Jam", "1,5 Jam", "45 Menit", "2 Jam"],
+                    answer: "1 Jam",
+                    steps: [
+                        "Diketahui rasio <strong>IPA : Matematika = 3 : 4</strong>, dan waktu IPA = <strong>45 menit</strong>.",
+                        "Nilai 1 bagian rasio = 45 menit ÷ 3 = <strong>15 menit</strong>.",
+                        "Waktu belajar Matematika = 4 × 15 menit = <strong>60 menit</strong>.",
+                        "Karena yang ditanya dalam satuan jam, <strong>60 menit = 1 Jam</strong>."
+                    ]
+                },
+                {
+                    act1: { icon: "⚽", label: "Latihan Sepak Bola", time: "14.30 - 16.00" },
+                    act2: { icon: "🚿", label: "Istirahat & Mandi", time: "16.00 - 16.30" },
+                    question: "Bima berlatih sepak bola mulai pukul 14.30 hingga pukul 16.00. Setelah itu, ia beristirahat dan mandi hingga pukul 16.30. Rasio waktu latihan terhadap waktu istirahat adalah...",
+                    options: ["3 : 1", "1 : 3", "2 : 1", "3 : 2"],
+                    answer: "3 : 1",
+                    steps: [
+                        "Hitung durasi latihan: dari 14.30 ke 16.00 = <strong>1 jam 30 menit = 90 menit</strong>.",
+                        "Hitung durasi istirahat: dari 16.00 ke 16.30 = <strong>30 menit</strong>.",
+                        "Bandingkan keduanya: <strong>90 menit : 30 menit</strong>.",
+                        "Bagi dengan 30, maka diperoleh rasio <strong>3 : 1</strong>."
+                    ]
+                },
+                {
+                    act1: { icon: "🎨", label: "Menggambar", time: "Rasio 2" },
+                    act2: { icon: "🖌️", label: "Mewarnai", time: "Rasio 5" },
+                    question: "Total waktu yang digunakan Nisa untuk menggambar dan mewarnai adalah 1 jam 10 menit. Jika rasio waktu menggambar terhadap mewarnai adalah 2 : 5, berapa menit waktu Nisa untuk mewarnai?",
+                    options: ["50 Menit", "20 Menit", "35 Menit", "45 Menit"],
+                    answer: "50 Menit",
+                    steps: [
+                        "Ubah total waktu ke menit: <strong>1 jam 10 menit = 60 + 10 = 70 menit</strong>.",
+                        "Jumlahkan angka rasio: <strong>2 + 5 = 7 bagian</strong>.",
+                        "Nilai 1 bagian = 70 menit ÷ 7 = <strong>10 menit</strong>.",
+                        "Waktu mewarnai (rasio 5) = 5 × 10 menit = <strong>50 Menit</strong>."
+                    ]
+                },
+                {
+                    act1: { icon: "🚴", label: "Ali Bersepeda", time: "40 Menit" },
+                    act2: { icon: "🏃", label: "Doni Berlari", time: "1 Jam" },
+                    question: "Ali bersepeda selama 40 menit dan Doni berlari selama 1 jam. Berapakah rasio lama Ali bersepeda terhadap JUMLAH waktu olahraga mereka berdua?",
+                    options: ["2 : 5", "2 : 3", "3 : 5", "1 : 2"],
+                    answer: "2 : 5",
+                    steps: [
+                        "Ubah waktu Doni ke menit: <strong>1 jam = 60 menit</strong>.",
+                        "Hitung <strong>JUMLAH waktu</strong> mereka berdua: 40 menit + 60 menit = <strong>100 menit</strong>.",
+                        "Rasio waktu Ali terhadap jumlah waktu = <strong>40 : 100</strong>.",
+                        "Bagi keduanya dengan 20: 40 ÷ 20 = <strong>2</strong> dan 100 ÷ 20 = <strong>5</strong>. Jadi rasionya <strong>2 : 5</strong>."
+                    ]
+                },
+                {
+                    act1: { icon: "🚆", label: "Kereta Api", time: "2 Jam 30 Menit" },
+                    act2: { icon: "✈️", label: "Pesawat Terbang", time: "45 Menit" },
+                    question: "Perjalanan dari kota A ke kota B naik kereta api memakan waktu 2 jam 30 menit, sedangkan naik pesawat hanya 45 menit. Rasio waktu perjalanan pesawat terhadap kereta api adalah...",
+                    options: ["3 : 10", "10 : 3", "1 : 5", "3 : 8"],
+                    answer: "3 : 10",
+                    steps: [
+                        "Perhatikan urutan: <strong>Pesawat : Kereta Api</strong>.",
+                        "Ubah waktu kereta api ke menit: <strong>2 jam 30 menit = 120 + 30 = 150 menit</strong>.",
+                        "Perbandingan: <strong>45 menit : 150 menit</strong>.",
+                        "Bagi kedua bilangan dengan FPB-nya yaitu <strong>15</strong> (45 ÷ 15 = 3 dan 150 ÷ 15 = 10). Jadi <strong>3 : 10</strong>."
+                    ]
+                },
+                {
+                    act1: { icon: "📖", label: "Membaca Novel", time: "Rasio 5" },
+                    act2: { icon: "📱", label: "Bermain Ponsel", time: "Rasio 2" },
+                    question: "Selisih waktu Gilang membaca novel dan bermain ponsel adalah 45 menit. Jika rasio waktu membaca novel terhadap bermain ponsel adalah 5 : 2, berapa lama Gilang bermain ponsel?",
+                    options: ["30 Menit", "75 Menit", "15 Menit", "45 Menit"],
+                    answer: "30 Menit",
+                    steps: [
+                        "Karena yang diketahui adalah <strong>selisih waktu</strong>, kurangkan angka rasionya: <strong>5 - 2 = 3 bagian</strong>.",
+                        "Nilai 1 bagian = 45 menit ÷ 3 = <strong>15 menit</strong>.",
+                        "Waktu bermain ponsel (rasio 2) = 2 × 15 menit = <strong>30 Menit</strong>."
+                    ]
+                },
+                {
+                    act1: { icon: "🏫", label: "Jam Pelajaran", time: "07.00 - 12.00" },
+                    act2: { icon: "🥪", label: "Total Istirahat", time: "2 × 30 Menit" },
+                    question: "Sekolah berlangsung dari pukul 07.00 sampai 12.00 (termasuk 2 kali istirahat yang masing-masing 30 menit). Berapa rasio waktu istirahat terhadap waktu BELAJAR efektif di kelas?",
+                    options: ["1 : 4", "1 : 5", "2 : 5", "1 : 3"],
+                    answer: "1 : 4",
+                    steps: [
+                        "Total waktu di sekolah (07.00 - 12.00) = <strong>5 jam = 300 menit</strong>.",
+                        "Total waktu istirahat = 2 × 30 menit = <strong>60 menit</strong>.",
+                        "Waktu belajar efektif = 300 menit - 60 menit = <strong>240 menit</strong>.",
+                        "Rasio istirahat : belajar efektif = <strong>60 : 240</strong> = <strong>1 : 4</strong>."
+                    ]
+                }
+            ]
+        };
+
+        // ==================== STATE PERMAINAN ====================
+        let currentLevel = 'mudah';
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let lives = 3;
+        let correctCount = 0;
+        let answered = false;
+        let timerInterval = null;
+        let timeLeft = 30;
+
+        // Fungsi mengacak array (Fisher-Yates Shuffle)
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Memulai Timer Hitung Mundur
+        function startQuestionTimer() {
+            stopQuestionTimer();
+            // Durasi per level: Mudah 30s, Sedang 40s, HOTS 50s
+            timeLeft = currentLevel === 'mudah' ? 30 : (currentLevel === 'sedang' ? 40 : 50);
+            updateTimerUI();
+            startTensionAudio();
+
+            timerInterval = setInterval(() => {
+                if (answered) {
+                    stopQuestionTimer();
+                    return;
+                }
+                timeLeft--;
+                updateTimerUI();
+
+                if (timeLeft <= 0) {
+                    stopQuestionTimer();
+                    handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        function stopQuestionTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            stopTensionAudio();
+        }
+
+        function updateTimerUI() {
+            const timerBox = document.getElementById('timer-box');
+            const timerDisplay = document.getElementById('timer-display');
+            const timerIcon = document.getElementById('timer-icon');
+
+            timerDisplay.textContent = `${timeLeft}s`;
+
+            if (timeLeft <= 10) {
+                timerBox.classList.add('timer-urgent');
+                timerIcon.textContent = '🚨';
+            } else {
+                timerBox.classList.remove('timer-urgent');
+                timerIcon.textContent = '⏳';
+            }
+        }
+
+        // Menangani ketika waktu habis
+        function handleTimeOut() {
+            if (answered) return;
+            answered = true;
+
+            const q = currentQuestions[currentIndex];
+            const allButtons = document.querySelectorAll('.option-btn');
+
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                const textSpan = btn.querySelectorAll('span')[1].textContent;
+                if (textSpan === q.answer) {
+                    btn.className = 'option-btn w-full p-4 rounded-2xl border-2 font-fredoka font-bold text-lg sm:text-xl flex items-center gap-3.5 text-left shadow-md bg-emerald-500 border-emerald-600 text-white';
+                    btn.querySelectorAll('span')[0].className = 'w-9 h-9 rounded-xl bg-white text-emerald-600 flex items-center justify-center text-base font-extrabold shrink-0';
+                }
+            });
+
+            playSound('wrong');
+            lives--;
+            document.getElementById('question-card').classList.add('animate-shake');
+
+            const feedbackPanel = document.getElementById('feedback-panel');
+            feedbackPanel.className = 'rounded-3xl p-5 border-2 bg-rose-50 border-rose-400 text-rose-950 transition-all pop-in';
+            document.getElementById('feedback-emoji').textContent = '⏰';
+            document.getElementById('feedback-title').textContent = 'Waktu Habis! Tetap Fokus!';
+            document.getElementById('feedback-subtitle').textContent = `Jawaban yang benar adalah ${q.answer}. Yuk pelajari langkahnya di bawah!`;
+
+            const stepsContainer = document.getElementById('explanation-steps');
+            stepsContainer.innerHTML = q.steps.map((step, index) => `
+                <div class="flex items-start gap-2">
+                    <span class="bg-sky-100 text-sky-700 font-bold text-xs px-2 py-0.5 rounded-full mt-0.5">${index + 1}</span>
+                    <p>${step}</p>
+                </div>
+            `).join('');
+
+            const btnNext = document.getElementById('btn-next');
+            if (lives <= 0 || currentIndex === currentQuestions.length - 1) {
+                btnNext.innerHTML = `<span>Lihat Hasil Akhir</span> <span>🏆</span>`;
+            } else {
+                btnNext.innerHTML = `<span>Soal Berikutnya</span> <span>➡️</span>`;
+            }
+
+            updateHUD();
+            feedbackPanel.classList.remove('hidden');
+        }
+
+        // Memulai Permainan
+        function startGame(level) {
+            playSound('click');
+            currentLevel = level;
+            currentQuestions = shuffleArray(questionBank[level]);
+            currentIndex = 0;
+            score = 0;
+            lives = 3;
+            correctCount = 0;
+            answered = false;
+
+            // Update badge level
+            const badge = document.getElementById('level-badge');
+            if (level === 'mudah') {
+                badge.textContent = '🌱 Mudah';
+                badge.className = 'px-2.5 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide bg-emerald-100 text-emerald-700 hidden md:inline-block';
+            } else if (level === 'sedang') {
+                badge.textContent = '🚀 Sedang';
+                badge.className = 'px-2.5 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide bg-amber-100 text-amber-700 hidden md:inline-block';
+            } else {
+                badge.textContent = '🏆 Tantangan HOTS';
+                badge.className = 'px-2.5 py-1 rounded-full text-xs font-extrabold uppercase tracking-wide bg-rose-100 text-rose-700 hidden md:inline-block';
+            }
+
+            // Ganti tampilan layar
+            document.getElementById('screen-menu').classList.add('hidden');
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+
+            updateHUD();
+            renderQuestion();
+        }
+
+        // Memperbarui Nyawa, Skor, dan Progress Bar
+        function updateHUD() {
+            // Render nyawa (hati)
+            const livesContainer = document.getElementById('lives-container');
+            livesContainer.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                const heart = document.createElement('span');
+                heart.textContent = i < lives ? '❤️' : '🤍';
+                heart.className = i < lives ? 'transition-transform scale-100' : 'opacity-40 scale-90';
+                livesContainer.appendChild(heart);
+            }
+
+            document.getElementById('score-display').textContent = score;
+            document.getElementById('question-number').textContent = currentIndex + 1;
+            document.getElementById('total-questions').textContent = currentQuestions.length;
+
+            const progressPercent = ((currentIndex) / currentQuestions.length) * 100;
+            document.getElementById('progress-bar').style.width = `${Math.max(10, progressPercent)}%`;
+        }
+
+        // Menampilkan Soal ke Layar
+        function renderQuestion() {
+            answered = false;
+            const q = currentQuestions[currentIndex];
+
+            // Reset animasi kartu soal
+            const card = document.getElementById('question-card');
+            card.classList.remove('pop-in', 'animate-shake');
+            void card.offsetWidth; // trigger reflow
+            card.classList.add('pop-in');
+
+            // Sembunyikan panel umpan balik
+            document.getElementById('feedback-panel').classList.add('hidden');
+
+            // Isi data visual perbandingan
+            document.getElementById('act1-icon').textContent = q.act1.icon;
+            document.getElementById('act1-label').textContent = q.act1.label;
+            document.getElementById('act1-time').textContent = q.act1.time;
+
+            document.getElementById('act2-icon').textContent = q.act2.icon;
+            document.getElementById('act2-label').textContent = q.act2.label;
+            document.getElementById('act2-time').textContent = q.act2.time;
+
+            // Isi teks pertanyaan
+            document.getElementById('question-text').textContent = q.question;
+
+            // Acak posisi pilihan jawaban
+            const shuffledOptions = shuffleArray(q.options);
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            const letters = ['A', 'B', 'C', 'D'];
+            const colors = [
+                'bg-sky-50 hover:bg-sky-100 border-sky-300 border-b-sky-500 text-sky-900',
+                'bg-indigo-50 hover:bg-indigo-100 border-indigo-300 border-b-indigo-500 text-indigo-900',
+                'bg-purple-50 hover:bg-purple-100 border-purple-300 border-b-purple-500 text-purple-900',
+                'bg-teal-50 hover:bg-teal-100 border-teal-300 border-b-teal-500 text-teal-900'
+            ];
+
+            shuffledOptions.forEach((optText, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `option-btn w-full p-4 rounded-2xl border-2 font-fredoka font-bold text-lg sm:text-xl flex items-center gap-3.5 text-left shadow-sm btn-3d ${colors[idx]}`;
+                btn.onclick = () => checkAnswer(optText, btn);
+                btn.innerHTML = `
+                    <span class="w-9 h-9 rounded-xl bg-white shadow-sm flex items-center justify-center text-base font-extrabold shrink-0">${letters[idx]}</span>
+                    <span class="flex-1">${optText}</span>
+                `;
+                optionsContainer.appendChild(btn);
+            });
+
+            // Mulai hitung mundur dan suara menegangkan
+            startQuestionTimer();
+        }
+
+        // Memeriksa Jawaban Siswa
+        function checkAnswer(selectedOption, clickedBtn) {
+            if (answered) return;
+            answered = true;
+            stopQuestionTimer();
+
+            const q = currentQuestions[currentIndex];
+            const isCorrect = selectedOption === q.answer;
+            const allButtons = document.querySelectorAll('.option-btn');
+
+            // Nonaktifkan semua tombol opsi dan beri warna penanda
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                const textSpan = btn.querySelectorAll('span')[1].textContent;
+                if (textSpan === q.answer) {
+                    btn.className = 'option-btn w-full p-4 rounded-2xl border-2 font-fredoka font-bold text-lg sm:text-xl flex items-center gap-3.5 text-left shadow-md bg-emerald-500 border-emerald-600 text-white';
+                    btn.querySelectorAll('span')[0].className = 'w-9 h-9 rounded-xl bg-white text-emerald-600 flex items-center justify-center text-base font-extrabold shrink-0';
+                } else if (btn === clickedBtn && !isCorrect) {
+                    btn.className = 'option-btn w-full p-4 rounded-2xl border-2 font-fredoka font-bold text-lg sm:text-xl flex items-center gap-3.5 text-left shadow-md bg-rose-500 border-rose-600 text-white';
+                    btn.querySelectorAll('span')[0].className = 'w-9 h-9 rounded-xl bg-white text-rose-600 flex items-center justify-center text-base font-extrabold shrink-0';
+                }
+            });
+
+            const feedbackPanel = document.getElementById('feedback-panel');
+            const feedbackEmoji = document.getElementById('feedback-emoji');
+            const feedbackTitle = document.getElementById('feedback-title');
+            const feedbackSubtitle = document.getElementById('feedback-subtitle');
+
+            if (isCorrect) {
+                playSound('correct');
+                // Bonus poin berdasarkan level
+                const points = currentLevel === 'mudah' ? 100 : (currentLevel === 'sedang' ? 150 : 200);
+                score += points;
+                correctCount++;
+
+                feedbackPanel.className = 'rounded-3xl p-5 border-2 bg-emerald-50 border-emerald-400 text-emerald-950 transition-all pop-in';
+                feedbackEmoji.textContent = '🎉';
+                feedbackTitle.textContent = 'Hebat! Jawabanmu Benar!';
+                feedbackSubtitle.textContent = `Kamu mendapatkan +${points} poin bintang!`;
+            } else {
+                playSound('wrong');
+                lives--;
+                document.getElementById('question-card').classList.add('animate-shake');
+
+                feedbackPanel.className = 'rounded-3xl p-5 border-2 bg-rose-50 border-rose-400 text-rose-950 transition-all pop-in';
+                feedbackEmoji.textContent = '🤔';
+                feedbackTitle.textContent = 'Kurang Tepat, Tetap Semangat!';
+                feedbackSubtitle.textContent = `Jawaban yang benar adalah ${q.answer}. Yuk pelajari langkahnya di bawah!`;
+            }
+
+            // Tampilkan langkah demi langkah penyelesaian
+            const stepsContainer = document.getElementById('explanation-steps');
+            stepsContainer.innerHTML = q.steps.map((step, index) => `
+                <div class="flex items-start gap-2">
+                    <span class="bg-sky-100 text-sky-700 font-bold text-xs px-2 py-0.5 rounded-full mt-0.5">${index + 1}</span>
+                    <p>${step}</p>
+                </div>
+            `).join('');
+
+            // Ubah teks tombol lanjut jika soal terakhir atau nyawa habis
+            const btnNext = document.getElementById('btn-next');
+            if (lives <= 0 || currentIndex === currentQuestions.length - 1) {
+                btnNext.innerHTML = `<span>Lihat Hasil Akhir</span> <span>🏆</span>`;
+            } else {
+                btnNext.innerHTML = `<span>Soal Berikutnya</span> <span>➡️</span>`;
+            }
+
+            updateHUD();
+            feedbackPanel.classList.remove('hidden');
+
+            // Scroll halus ke panel penjelasan pada layar HP kecil
+            setTimeout(() => {
+                feedbackPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+
+        // Lanjut ke Soal Berikutnya atau Layar Akhir
+        function nextQuestion() {
+            playSound('click');
+            if (lives <= 0 || currentIndex >= currentQuestions.length - 1) {
+                showResultScreen();
+            } else {
+                currentIndex++;
+                updateHUD();
+                renderQuestion();
+            }
+        }
+
+        // Menampilkan Layar Rekap Nilai Akhir
+        function showResultScreen() {
+            stopQuestionTimer();
+            document.getElementById('progress-bar').style.width = '100%';
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-result').classList.remove('hidden');
+
+            const total = currentQuestions.length;
+            const accuracy = Math.round((correctCount / total) * 100);
+
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('final-correct').textContent = `${correctCount}/${total}`;
+            document.getElementById('final-accuracy').textContent = `${accuracy}%`;
+
+            const starsContainer = document.getElementById('result-stars');
+            const resultTitle = document.getElementById('result-title');
+            const resultMessage = document.getElementById('result-message');
+
+            if (accuracy >= 85 && lives > 0) {
+                playSound('win');
+                starsContainer.innerHTML = '<span>⭐</span><span>⭐</span><span>⭐</span>';
+                resultTitle.textContent = 'Luar Biasa! Juara Rasio Waktu!';
+                resultMessage.textContent = 'Kamu sangat teliti menyamakan satuan waktu dan menyederhanakan rasio. Pertahankan prestasimu!';
+                triggerConfetti();
+            } else if (accuracy >= 50) {
+                playSound('win');
+                starsContainer.innerHTML = '<span>⭐</span><span>⭐</span><span class="opacity-30">⭐</span>';
+                resultTitle.textContent = 'Bagus Sekali! Terus Berlatih!';
+                resultMessage.textContent = 'Kamu sudah memahami dasar perbandingan durasi waktu. Coba lagi untuk meraih 3 bintang penuh!';
+            } else {
+                starsContainer.innerHTML = '<span>⭐</span><span class="opacity-30">⭐</span><span class="opacity-30">⭐</span>';
+                resultTitle.textContent = 'Jangan Menyerah, Ayo Coba Lagi!';
+                resultMessage.textContent = 'Ingat untuk selalu menyamakan satuan waktu terlebih dahulu (1 jam = 60 menit) sebelum membagi dengan FPB-nya.';
+            }
+        }
+
+        // Efek Konfeti Perayaan
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 90,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        // Mengulang Level yang Sama
+        function restartSameLevel() {
+            startGame(currentLevel);
+        }
+
+        // Kembali ke Menu Utama
+        function backToMenu() {
+            stopQuestionTimer();
+            playSound('click');
+            document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-menu').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
